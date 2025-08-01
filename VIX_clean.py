@@ -36,14 +36,7 @@ d_params = {
 
 #endregion
 #region LOAD DATA
-#region LOAD DATA
-# Explicit date range and auto_adjust=False to avoid blank/adjusted data
-df_vix = yf.download('^VIX', start='2010-01-01', end=None, interval='1d', auto_adjust=False, progress=False)
-
-# Handle case where no data is returned
-if df_vix.empty:
-    raise ValueError("Yahoo Finance returned no data for ^VIX. Check your internet connection or the ticker symbol.")
-#endregion
+df_vix = yf.download('^VIX', start='2010-01-01', interval='1d', auto_adjust=False, progress=False)
 
 #endregion
 #region PREPARE DATA
@@ -121,5 +114,3 @@ df_run['ret'] = np.where(
 
 print(df_run[['VIX', 'pre_5', 'post_5', 'fitted', 'posit', 'ret']].tail(10))
 #endregion
-
-
