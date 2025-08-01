@@ -1,69 +1,116 @@
-import streamlit as st
+##########################################################################################
+#This script runs the VIX model. The positions can be found in df_run, alongside the     #
+#relevant parameters and historical returns. The calcs are based on hardcoded regression #
+#parameters, extracted from the original model.                                           #
+#Version 10/7/2025                                                                       #
+##########################################################################################
+#region IMPORT
 import pandas as pd
-from VIX_clean_v1_hardcoded import df_run
+import yfinance as yf
+import numpy as np
+#endregion
+#region LOAD STATIC PARAMETERS
+# Convert inner dicts to DataFrames
+# Step 1: Define the raw dictionary
+raw_params = {
+    'neg_corr': {'Coefficient': [-0.30202077013454487, 0.003660675742243274, -0.2685514957593763, 0.003268463654785291, -0.3008018614786045, 0.002101717745679106, 0.03496827310715945, 0.002340633531401022, 0.10197102520070589, 0.0028441997300451337, -0.1621437084001196, 0.0014947458731857277, -0.11272791484620841, 0.0009667204261701494, -0.07592645113944381, 0.00230753946493187, -0.14259928383634013, 0.0006616595723406198, -0.18045124081079275, 0.0006441021276362973, -0.09873761544058336, 0.0007184457277373766, -0.017686701666223957, 0.00015160549485749702, -0.22473584632452795, 0.00031048899669906533, -0.15955899734529722, 0.00014140585077270111, -0.27874965200611684, 0.0001902007895116714, 0.06459526880125893, 0.000391572933791125, -0.30653428478769507, 0.0004682452682251365, -0.1782985486466413, 4.694406374697539e-05, -0.1465813315300772, -0.0006183958943388968, -0.13342328478023008, 0.0002533745659776442, -0.2607060600463017, -0.00018084692633110335, -0.1475863086852124, -0.00012112658638633575, -0.12005904793121464, -0.00022782895203923717, -0.10775546563475144, 0.0007872277312326773, -0.11386633798996582, -0.0002896744602474386, -0.13548625551839905, -0.00023031107512841233],
+              'P-value': [3.137034799579634e-08, 3.85255330369828e-18, 0.0002745043513605197, 3.6495320118792786e-09, 0.0002870672151129493, 0.00013248560819090395, 0.7047962460296228, 0.0007043753045746577, 0.34742115666313866, 0.0006056872631543352, 0.07639364516862832, 0.02939428761632202, 0.08115566450811977, 0.09452989810364261, 0.33595138716075323, 0.00025032511995212855, 0.07524923395586673, 0.27604464387867544, 0.004024606741228632, 0.15012462624918071, 0.17570548761972749, 0.17589305529919455, 0.824756012148082, 0.7878286702249034, 0.00187925203355433, 0.5092332405545112, 0.024384488313516976, 0.7763257081520067, 1.1322274521927201e-05, 0.691336055855412, 0.34190473648132313, 0.3878116358550372, 0.00012833925188576847, 0.3013024342351251, 0.02457163568766264, 0.9212254700335075, 0.03182656717232445, 0.13121409147920904, 0.09007192664022079, 0.5920609226107034, 0.002843576697609494, 0.6993444591955215, 0.116131898755473, 0.7964362515977315, 0.09826367470461572, 0.5872955967838616, 0.23476401620482884, 0.11482953148370953, 0.2812771262548988, 0.6270241234177057, 0.043337039780051115, 0.576298358520886],
+              'Variable': ['pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX'],
+              'high': [12.0, 12.0, 12.5, 12.5, 13.0, 13.0, 13.5, 13.5, 14.0, 14.0, 14.5, 14.5, 15.0, 15.0, 15.5, 15.5, 16.0, 16.0, 16.5, 16.5, 17.0, 17.0, 17.5, 17.5, 18.0, 18.0, 18.5, 18.5, 19.0, 19.0, 19.5, 19.5, 20.0, 20.0, 20.5, 20.5, 21.0, 21.0, 21.5, 21.5, 22.0, 22.0, 22.5, 22.5, 23.0, 23.0, 23.5, 23.5, 24.0, 24.0, 24.5, 24.5],
+              'low': [0.0, 0.0, 12.0, 12.0, 12.5, 12.5, 13.0, 13.0, 13.5, 13.5, 14.0, 14.0, 14.5, 14.5, 15.0, 15.0, 15.5, 15.5, 16.0, 16.0, 16.5, 16.5, 17.0, 17.0, 17.5, 17.5, 18.0, 18.0, 18.5, 18.5, 19.0, 19.0, 19.5, 19.5, 20.0, 20.0, 20.5, 20.5, 21.0, 21.0, 21.5, 21.5, 22.0, 22.0, 22.5, 22.5, 23.0, 23.0, 23.5, 23.5, 24.0, 24.0]},
+    'pos_corr': {'Coefficient': [-0.06941471086048455, 0.001852404905346605, -0.17706557527838004, 0.0007032567455578032, -0.24624362954187892, -0.0017545023309900143, 0.02091027739768328, 6.434264204934091e-05, -0.4989765286411326, -0.001513254842464249, -0.04367327079327664, 0.0018442403476336294, -0.3248526041804252, -0.002125026527901707, -0.0965011391567207, -0.0005322221878480372, -0.15955829820144515, 0.003932985417863336, -0.34379946607375705, 0.0025835613152030523, -0.13755748395129372, 9.525746869542396e-05, 0.24626606450716568, -0.002465009971879246, -0.36834615489100336, 0.005863598860370521, -0.06007390879319954, -0.0023192811213026956, -0.1594008409860949, 0.001176308352152531, -0.4214706252444538, 0.0008070395755723985, -0.17577533350216246, -0.003453149019437986, -0.5930292405671327, 0.005229361944023567, -0.24489624783803415, -0.0016439708460646986, -0.4258468934321745, 0.0006012637553869679, -0.024660598115764033, 6.069899353413958e-06, -1.016575091447065, 0.008397186515942215, -0.29105259520752086, -0.000229555465825279, -0.26642694929063593, 0.0024920893869879632, -0.26258712594774386, -0.006030583669617397, -0.45406001349626235, 0.002361439185012606],
+              'P-value': [0.7728881314894986, 0.4549038199011287, 0.5488201483079247, 0.6949497705232885, 0.07582358382229325, 0.1361900179241243, 0.934282850773741, 0.9714576405791624, 0.012336161140996319, 0.36102875376312094, 0.7892855462082299, 0.18415115489145806, 0.012323095775748645, 0.15341118795077477, 0.6273068327666589, 0.7368980299747594, 0.2708764707436526, 0.04960926840294939, 0.06577138623625399, 0.1653445119886781, 0.571050945628391, 0.9730659048546764, 0.4457894544388039, 0.44273080765560335, 0.1858419820902022, 0.06365930736733283, 0.5030279766728054, 0.14536789221612015, 0.4746931775490084, 0.6525677411405924, 0.10922528647413723, 0.7789174821383844, 0.4021352014180407, 0.07780765601069477, 0.006992047091478278, 0.10705152091197637, 0.025638078491815833, 0.20827959263660087, 0.00556950673741536, 0.7205447433742165, 0.8727935892257035, 0.9936284722065649, 0.03368200250082018, 0.0789876352125219, 0.15810201233874774, 0.9361363282919584, 0.21899897371888372, 0.3364421657459788, 0.08602304951038349, 0.037508061914092256, 0.141274987063672, 0.25939693814187165],
+              'Variable': ['pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX', 'pre_5', 'VIX'],
+              'high': [12.0, 12.0, 12.5, 12.5, 13.0, 13.0, 13.5, 13.5, 14.0, 14.0, 14.5, 14.5, 15.0, 15.0, 15.5, 15.5, 16.0, 16.0, 16.5, 16.5, 17.0, 17.0, 17.5, 17.5, 18.0, 18.0, 18.5, 18.5, 19.0, 19.0, 19.5, 19.5, 20.0, 20.0, 20.5, 20.5, 21.0, 21.0, 21.5, 21.5, 22.0, 22.0, 22.5, 22.5, 23.0, 23.0, 23.5, 23.5, 24.0, 24.0, 24.5, 24.5],
+              'low': [0.0, 0.0, 12.0, 12.0, 12.5, 12.5, 13.0, 13.0, 13.5, 13.5, 14.0, 14.0, 14.5, 14.5, 15.0, 15.0, 15.5, 15.5, 16.0, 16.0, 16.5, 16.5, 17.0, 17.0, 17.5, 17.5, 18.0, 18.0, 18.5, 18.5, 19.0, 19.0, 19.5, 19.5, 20.0, 20.0, 20.5, 20.5, 21.0, 21.0, 21.5, 21.5, 22.0, 22.0, 22.5, 22.5, 23.0, 23.0, 23.5, 23.5, 24.0, 24.0]}}
 
-st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 
-st.sidebar.title("📊 Display Options")
-view_option = st.sidebar.radio("Select view mode:", ["Formatted Table", "Raw Data Table"])
 
-min_date = df_run.index.min().date()
-max_date = df_run.index.max().date()
+# Step 2: Convert any inner dict to DataFrame
+d_params = {
+    k: pd.DataFrame(v) if isinstance(v, dict) else v
+    for k, v in raw_params.items()
+}
 
-start_date, end_date = st.sidebar.date_input(
-    "Select Date Range:",
-    value=[min_date, max_date],
-    min_value=min_date,
-    max_value=max_date
+
+
+#endregion
+#region LOAD DATA
+df_vix = yf.download('^VIX', start='2010-01-01', interval='1d', auto_adjust=False, progress=False)
+
+#endregion
+#region PREPARE DATA
+df = pd.DataFrame()
+df['VIX'] = df_vix['Close']
+df.dropna(inplace=True)
+
+for i in range(1, 10):
+    df[f'pre_{i}'] = df['VIX'].pct_change(i)
+    df[f'post_{i}'] = df['VIX'].shift(-i) / df['VIX'] - 1
+
+df_shifted = df.shift(1)
+df['rollcorr_post1_pre8'] = df_shifted['post_1'].rolling(25).corr(df_shifted['pre_8'])
+#endregion
+#region RUN MODEL - Vectorized
+df_run = df[['VIX', 'pre_5', 'post_5', 'rollcorr_post1_pre8']].copy()
+df_run.dropna(subset=['rollcorr_post1_pre8'], inplace=True)
+
+# Save original datetime index
+df_run['original_index'] = df_run.index
+
+# Tag correlation type
+df_run['corr_type'] = np.select(
+    [df_run['rollcorr_post1_pre8'] > 0, df_run['rollcorr_post1_pre8'] < 0],
+    ['pos_corr', 'neg_corr'], default=None)
+
+# Prepare model lookup table
+def prepare_model_df(df_model, label):
+    df_model = df_model[df_model['Variable'].isin(['pre_5', 'VIX'])].copy()
+    df_model['corr_type'] = label
+    return df_model
+
+model_df = pd.concat([
+    prepare_model_df(d_params['pos_corr'], 'pos_corr'),
+    prepare_model_df(d_params['neg_corr'], 'neg_corr')], ignore_index=True)
+
+# Merge coefficients
+for var in ['pre_5', 'VIX']:
+    coeffs = model_df[model_df['Variable'] == var].copy()
+
+    def lookup_coeff(row):
+        match = coeffs[
+            (coeffs['corr_type'] == row['corr_type']) &
+            (coeffs['low'] <= row['VIX']) &
+            (row['VIX'] < coeffs['high'])
+        ]
+        return match['Coefficient'].values[0] if not match.empty else np.nan
+
+    df_run[f'{var}_coeff'] = df_run.apply(lookup_coeff, axis=1)
+
+# Restore datetime index
+# Restore and sort datetime index
+df_run.set_index('original_index', inplace=True)
+df_run.sort_index(inplace=True)
+#endregion
+#region COMPUTE MODEL RESULTS
+threshold_long = 0.02
+threshold_short = 0.0
+stop_loss_short = 0.2
+
+df_run['contr_pre_5'] = df_run['pre_5'] * df_run['pre_5_coeff']
+df_run['contr_vix'] = df_run['VIX'] * df_run['VIX_coeff']
+df_run['fitted'] = df_run['contr_pre_5'] + df_run['contr_vix']
+
+df_run['posit'] = np.where(df_run['fitted'] > threshold_long, 1,
+                           np.where(df_run['fitted'] < threshold_short, -1, 0))
+
+df_run['orig/fitted'] = df_run['post_5'] * abs(df_run['posit']) / df_run['fitted']
+
+df_run['ret'] = np.where(
+    df_run['posit'] == -1,
+    np.maximum(-stop_loss_short, df_run['posit'] * df_run['post_5']),
+    df_run['posit'] * df_run['post_5']
 )
 
-mask = (df_run.index.date >= start_date) & (df_run.index.date <= end_date)
-df_filtered = df_run.loc[mask].copy()
-
-display_df = df_filtered[["VIX", "pre_5", "post_5", "fitted", "posit", "ret"]].copy()
-display_df.rename(columns={
-    "pre_5": "Pre 5d",
-    "post_5": "Post 5d",
-    "fitted": "Signal",
-    "posit": "Position",
-    "ret": "Return"
-}, inplace=True)
-
-pos_map = {1: "Long", 0: "Flat", -1: "Short"}
-display_df["Position"] = display_df["Position"].map(pos_map)
-
-if isinstance(display_df.index, pd.DatetimeIndex):
-    display_df.insert(0, "Date", display_df.index.strftime("%Y-%m-%d"))
-
-def style_position(val):
-    if val == "Long":
-        return "background-color:#e8f5e9; color:#1b5e20; font-weight:600"
-    elif val == "Short":
-        return "background-color:#ffebee; color:#b71c1c; font-weight:600"
-    elif val == "Flat":
-        return "background-color:#fff3e0; color:#e65100; font-weight:600"
-    return ""
-
-styled = (
-    display_df
-    .style
-    .format({
-        "VIX": "{:.2f}",
-        "Pre 5d": "{:.2%}",
-        "Post 5d": "{:.2%}",
-        "Signal": "{:.3f}",
-        "Return": "{:.2%}"
-    })
-    .applymap(style_position, subset=["Position"])
-    .background_gradient(subset=["Signal", "Return"], cmap="RdYlGn")
-)
-
-if view_option == "Formatted Table":
-    st.subheader("📈 VIX Model - Formatted Output")
-    st.caption("All values are display-formatted only; underlying calculations are untouched.")
-    st.dataframe(styled, use_container_width=True, height=900)
-
-elif view_option == "Raw Data Table":
-    st.subheader("🔍 VIX Model - Raw Data Output")
-    st.caption("Unformatted output of the df_run DataFrame.")
-    st.dataframe(df_filtered, use_container_width=True, height=900)
+print(df_run[['VIX', 'pre_5', 'post_5', 'fitted', 'posit', 'ret']].tail(10))
+#endregion
