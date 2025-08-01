@@ -10,12 +10,18 @@ view_option = st.sidebar.radio("Select view mode:", ["Formatted Table", "Raw Dat
 min_date = df_run.index.min().date()
 max_date = df_run.index.max().date()
 
-start_date, end_date = st.sidebar.date_input(
+date_range = st.sidebar.date_input(
     "Select Date Range:",
     value=[min_date, max_date],
     min_value=min_date,
     max_value=max_date
 )
+
+if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
+    start_date, end_date = date_range
+else:
+    st.error("⚠️ Please select a valid start and end date range.")
+    st.stop()
 
 mask = (df_run.index.date >= start_date) & (df_run.index.date <= end_date)
 df_filtered = df_run.loc[mask].copy()
