@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from VIX_clean_v1_hardcoded import df_run
+from VIX_clean import df_run
 
 st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 
