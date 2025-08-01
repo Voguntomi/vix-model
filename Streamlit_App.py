@@ -25,6 +25,7 @@ else:
 
 mask = (df_run.index.date >= start_date) & (df_run.index.date <= end_date)
 df_filtered = df_run.loc[mask].copy()
+df_filtered.sort_index(ascending=False, inplace=True)
 
 display_df = df_filtered[["VIX", "pre_5", "post_5", "fitted", "posit", "ret"]].copy()
 display_df.rename(columns={
