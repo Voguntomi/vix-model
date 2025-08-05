@@ -1,16 +1,14 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf  # Needed for yf.cache_clear()
 
-# ✅ Sidebar force refresh button
+# ✅ Optional force refresh button
 st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 st.sidebar.title("📊 Display Options")
 
 if st.sidebar.button("🔄 Force Refresh"):
-    yf.cache_clear()
     st.experimental_rerun()
 
-# ✅ Import after potential rerun
+# ✅ Load the model after rerun (fresh import each time)
 from VIX_clean import df_run
 
 view_option = st.sidebar.radio("Select view mode:", ["Formatted Table", "Raw Data Table"])
