@@ -12,15 +12,6 @@ import numpy as np
 #region LOAD STATIC PARAMETERS
 # Convert inner dicts to DataFrames
 
-# ✅ Added: Optional manual refresh if using Streamlit
-try:
-    from streamlit.runtime.scriptrunner import get_script_run_ctx
-    import streamlit as st
-    if st.sidebar.button("🔄 Force Refresh"):
-        yf.cache_clear()
-        st.experimental_rerun()
-except Exception:
-    pass
     
 # Step 1: Define the raw dictionary
 raw_params = {
