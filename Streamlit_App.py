@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
+from streamlit.runtime.scriptrunner import rerun  # ✅ Correct rerun import
 
-# ✅ Optional force refresh button
 st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 st.sidebar.title("📊 Display Options")
 
+# ✅ Force Refresh button
 if st.sidebar.button("🔄 Force Refresh"):
-    st.experimental_rerun()
+    rerun()
 
-# ✅ Load the model after rerun (fresh import each time)
+# ✅ Load model after refresh (re-imports df_run)
 from VIX_clean import df_run
 
 view_option = st.sidebar.radio("Select view mode:", ["Formatted Table", "Raw Data Table"])
