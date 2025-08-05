@@ -8,6 +8,7 @@
 import pandas as pd
 import yfinance as yf
 import numpy as np
+import datetime
 #endregion
 #region LOAD STATIC PARAMETERS
 # Convert inner dicts to DataFrames
