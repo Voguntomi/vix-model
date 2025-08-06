@@ -12,10 +12,20 @@ if st.sidebar.button("🔄 Force Refresh"):
     st.session_state.refresh_triggered = True
     st.rerun()
 
+# ✅ Preserve view selection across reruns
+if "view_option" not in st.session_state:
+    st.session_state.view_option = "Formatted Table"
+
+st.sidebar.radio(
+    "Select view mode:",
+    ["Formatted Table", "Raw Data Table"],
+    key="view_option"
+)
+
+view_option = st.session_state.view_option
+
 # ✅ Load model after potential refresh
 from VIX_clean import df_run
-
-view_option = st.sidebar.radio("Select view mode:", ["Formatted Table", "Raw Data Table"])
 
 min_date = df_run.index.min().date()
 max_date = df_run.index.max().date()
@@ -75,12 +85,15 @@ styled = (
     .background_gradient(subset=["Signal", "Return"], cmap="RdYlGn")
 )
 
+# ✅ Last updated timestamp from filtered data
+last_updated = df_filtered.index.max().strftime("%Y-%m-%d")
+
 if view_option == "Formatted Table":
     st.subheader("📈 VIX Model - Formatted Output")
-    st.caption("All values are display-formatted only; underlying calculations are untouched.")
+    st.caption(f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; All values are display-formatted only; underlying calculations are untouched.")
     st.dataframe(styled, use_container_width=True, height=900)
 
 elif view_option == "Raw Data Table":
     st.subheader("🔍 VIX Model - Raw Data Output")
-    st.caption("Unformatted output of the df_run DataFrame.")
+    st.caption(f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; Unformatted output of the df_run DataFrame.")
     st.dataframe(df_filtered, use_container_width=True, height=900)
