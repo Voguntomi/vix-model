@@ -90,7 +90,7 @@ last_updated = df_filtered.index.max().strftime("%Y-%m-%d")
 
 if view_option == "Formatted Table":
     st.subheader("📈 VIX Model - Formatted Output")
-    st.caption(f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; All values are display-formatted only; underlying calculations are untouched.")
+    st.caption(f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;")
     st.dataframe(styled, use_container_width=True, height=900)
 
 elif view_option == "Raw Data Table":
