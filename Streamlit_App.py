@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import pytz
 
 st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 st.sidebar.title("📊 Display Options")
@@ -87,14 +88,16 @@ styled = (
 
 # ✅ Last updated from data
 last_updated = df_filtered.index.max().strftime("%Y-%m-%d")
-# ✅ Last refreshed (app rerun)
-last_refreshed = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# ✅ Last refreshed (UK time)
+uk_time = pd.Timestamp.now(tz="Europe/London")
+last_refreshed = uk_time.strftime("%Y-%m-%d %H:%M:%S")
 
 if view_option == "Formatted Table":
     st.subheader("📈 VIX Model - Formatted Output")
     st.caption(
         f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | "
-        f"🔁 Last Refreshed: {last_refreshed}"
+        f"🔁 Last Refreshed (UK Time): {last_refreshed}"
     )
     st.dataframe(styled, use_container_width=True, height=900)
 
@@ -102,6 +105,6 @@ elif view_option == "Raw Data Table":
     st.subheader("🔍 VIX Model - Raw Data Output")
     st.caption(
         f"✅ Last Updated: {last_updated} &nbsp;&nbsp;&nbsp; | "
-        f"🔁 Last Refreshed: {last_refreshed}"
+        f"🔁 Last Refreshed (UK Time): {last_refreshed}"
     )
     st.dataframe(df_filtered, use_container_width=True, height=900)
