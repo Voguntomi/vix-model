@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import pytz
+import importlib
+import VIX_clean   # import once
 
 st.set_page_config(page_title="VIX Model Viewer", layout="wide")
 st.sidebar.title("📊 Display Options")
@@ -25,9 +27,10 @@ st.sidebar.radio(
 
 view_option = st.session_state.view_option
 
-# ✅ Load model after potential refresh
-from VIX_clean import df_run
+# ✅ Always reload VIX_clean to refresh data
+df_run = importlib.reload(VIX_clean).df_run
 
+# --- Date range selection ---
 min_date = df_run.index.min().date()
 max_date = df_run.index.max().date()
 
@@ -48,6 +51,7 @@ mask = (df_run.index.date >= start_date) & (df_run.index.date <= end_date)
 df_filtered = df_run.loc[mask].copy()
 df_filtered.sort_index(ascending=False, inplace=True)
 
+# --- Prepare display ---
 display_df = df_filtered[["VIX", "pre_5", "post_5", "fitted", "posit", "ret"]].copy()
 display_df.rename(columns={
     "pre_5": "Pre 5d",
@@ -86,13 +90,12 @@ styled = (
     .background_gradient(subset=["Signal", "Return"], cmap="RdYlGn")
 )
 
-# ✅ Last updated from data
+# --- Metadata ---
 last_updated = df_filtered.index.max().strftime("%Y-%m-%d")
-
-# ✅ Last refreshed (UK time)
 uk_time = pd.Timestamp.now(tz="Europe/London")
 last_refreshed = uk_time.strftime("%Y-%m-%d %H:%M:%S")
 
+# --- Display ---
 if view_option == "Formatted Table":
     st.subheader("📈 VIX Model - Formatted Output")
     st.caption(
@@ -108,3 +111,4 @@ elif view_option == "Raw Data Table":
         f"🔁 Last Refreshed (UK Time): {last_refreshed}"
     )
     st.dataframe(df_filtered, use_container_width=True, height=900)
+
