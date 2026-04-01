@@ -86,7 +86,7 @@ styled = (
         "Signal": "{:.3f}",
         "Return": "{:.2%}"
     })
-    .applymap(style_position, subset=["Position"])
+    .map(style_position, subset=["Position"])
     .background_gradient(subset=["Signal", "Return"], cmap="RdYlGn")
 )
 
@@ -111,4 +111,3 @@ elif view_option == "Raw Data Table":
         f"🔁 Last Refreshed (UK Time): {last_refreshed}"
     )
     st.dataframe(df_filtered, use_container_width=True, height=900)
-
