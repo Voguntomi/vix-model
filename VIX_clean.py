@@ -40,6 +40,8 @@ d_params = {
 #endregion
 #region LOAD DATA
 df_vix = yf.download('^VIX', start='2010-01-01', interval='1d', auto_adjust=False, progress=False)
+if isinstance(df_vix.columns, pd.MultiIndex):
+    df_vix.columns = df_vix.columns.get_level_values(0)
 
 # ✅ Added: Check for stale VIX data
 latest_date = df_vix.index[-1].date()
